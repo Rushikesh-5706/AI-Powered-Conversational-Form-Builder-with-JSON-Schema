@@ -3,6 +3,7 @@ version: '3.8'
 services:
   backend:
     build: ./backend
+    image: rushi5706/form-builder:backend
     ports:
       - "8080:8080"
     env_file:
@@ -18,6 +19,7 @@ services:
       context: ./frontend
       args:
         - VITE_API_URL=http://localhost:8080
+    image: rushi5706/form-builder:frontend
     ports:
       - "3000:3000"
     depends_on:

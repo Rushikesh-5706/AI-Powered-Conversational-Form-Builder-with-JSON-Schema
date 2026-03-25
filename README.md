@@ -94,14 +94,21 @@ AI-Powered-Conversational-Form-Builder-with-JSON-Schema/
    \`\`\`bash
    cp backend/.env.example backend/.env
    # Edit backend/.env and replace the LLM_API_KEY with your real key.
-   \`\`\`
+   ```
    Note: `LLM_API_KEY` is required. The application will not start without it.
 3. Build and run the containers:
-   \`\`\`bash
+   ```bash
    docker-compose up --build
-   \`\`\`
+   ```
 4. Access the frontend application at http://localhost:3000
 5. Verify the backend health check at http://localhost:8080/health
+
+### Docker Registry Structure
+In compliance with production submission requirements, the pre-built Docker containers are hosted under a **single image repository** using explicit tags for each service. This cleanly divides the architecture without requiring multiple disparate repositories on Docker Hub.
+- **Backend Image:** `rushi5706/form-builder:backend`
+- **Frontend Image:** `rushi5706/form-builder:frontend`
+
+If you are pulling directly from Docker Hub instead of building locally, you can use these precise tags.
 
 ## Environment Variables
 
@@ -238,6 +245,8 @@ Draft 7 balances modern schema constraints with excellent library support. It pr
 - The system uses an in-memory `Map` for conversations; all form states and chat histories will be lost if the backend restarts.
 - There is no authenticated user tracking; anyone with a valid `conversationId` can modify the associated form.
 - The UI does not provide deeply nested group styles; forms rely heavily on the default styling provided by `@rjsf/core`.
+
+
 
 
 
