@@ -1,253 +1,189 @@
 # AI-Powered Conversational Form Builder
 
-This project is a dynamic, multi-turn conversational AI form builder that leverages JSON Schema to render complete forms based on user prompts. Built to solve the complexity of manual form creation, it allows users to simply describe what they need and instantly receive a fully functional, validated form. The system is designed to handle ambiguity by proactively asking clarifying questions, iterating on previous schemas rather than starting from scratch, and providing a robust visualization of schema changes over time.
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20-339933.svg?logo=nodedotjs&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Supported-2496ED.svg?logo=docker&logoColor=white)
+
+A dynamic, multi-turn conversational AI form builder that uses JSON Schema to render complete forms based on user prompts. Built to solve the complexity of manual form creation, it allows users to simply describe what they need and instantly receive a fully functional, validated form.
+
+---
 
 ## Architecture Overview
 
-\`\`\`text
-   +-------------+       +-------------+       +-------------------+
-   |             |       |             |       |                   |
-   |   Browser   | ----> |    Nginx    | ----> |   React Frontend  |
-   |             |       |  (frontend) |       |   (Vite + RJSF)   |
-   +-------------+       +-------------+       +-------------------+
-          |                                              |
-          | HTTP POST /api/form/generate                 |
-          v                                              v
-   +-------------+       +-------------+       +-------------------+
-   |             |       |             |       |                   |
-   | Express API | <---- |   In-Memory | ----> |  Schema Validator |
-   |  (Backend)  | ----> | Conversation|       |    (AJV + Draft 7)|
-   |             |       |    Store    |       |                   |
-   +-------------+       +-------------+       +-------------------+
-          |
-          | Groq SDK (llama-3.3-70b-versatile)
-          v
-   +-------------+
-   |             |
-   |  Groq API   |
-   |             |
-   +-------------+
-\`\`\`
+The system handles ambiguity by proactively asking clarifying questions, iterating on previous schemas rather than starting from scratch, and providing a robust visualization of schema changes over time.
 
-The architecture is split into a robust backend and a highly dynamic frontend. The React frontend is served natively during development via Vite and statically via Nginx in production Docker. User prompts are sent to the Express API, which maintains an in-memory conversation store keyed by UUIDs. The backend communicates with the Groq API to generate JSON Schema Draft 7 documents. A critical layer of the architecture is the validator—if the LLM hallucinates an invalid schema, the Express layer automatically catches it and retries up to three times with the contextual error.
+```mermaid
+graph TD
+    %% Frontend Layer
+    subgraph Frontend [Client Layer]
+        Browser[Web Browser]
+        React[React Frontend<br/>Vite + RJSF]
+    end
 
-## Technology Choices
+    %% Backend Layer
+    subgraph Backend [API Layer]
+        Express[Express Backend]
+        AJV[Schema Validator<br/>AJV Draft 7]
+        Store[(In-Memory<br/>Conv Store)]
+    end
 
-| Layer | Technology | Reason |
-|-------|------------|--------|
-| Backend | Node.js + Express.js | Lightweight, fast execution, excellent ecosystem for API middleware. |
-| LLM API | Groq SDK (llama-3.3) | High-speed inference, powerful instruction-following, reliable JSON output. |
-| Validation | AJV + ajv-formats | Industry standard for JSON Schema Draft 7 validation. |
-| Frontend | React 18 + Vite | Rapid development, strong component ecosystem, fast hot-reloading. |
-| Form Rendering | @rjsf/core | Generates complex UI automatically from JSON Schema with validation. |
-| State Management | Context API + useReducer | Sufficient for this app complexity without the overhead of Redux. |
-| Schema Diffs | deep-diff | Accurate detection of structural changes between JSON objects. |
+    %% LLM Layer
+    subgraph LLM [AI Engine]
+        Groq[Groq API<br/>llama-3.3-70b]
+    end
+
+    %% Flow
+    Browser -->|HTTP POST| Express
+    Express -->|Validates Input| AJV
+    Express -->|Stores History| Store
+    Express <-->|Generates Schema| Groq
+    Express -->|Returns UI State| React
+    React --> Browser
+```
+
+---
+
+## Quickstart: One-Command Startup
+
+Start the entire application stack instantly using Docker Compose.
+
+**Step 1: Clone and setup environment**
+```bash
+git clone https://github.com/Rushikesh-5706/AI-Powered-Conversational-Form-Builder-with-JSON-Schema.git
+cd AI-Powered-Conversational-Form-Builder-with-JSON-Schema
+
+cp backend/.env.example backend/.env
+# NOTE: Open backend/.env and replace LLM_API_KEY with your real Groq key!
+```
+
+**Step 2: Start the application**
+```bash
+docker-compose up --build -d
+```
+
+**Step 3: Access the platform**
+* **Frontend UI:** Open your browser to [http://localhost:3000](http://localhost:3000)
+* **Backend API:** Running on `http://localhost:8080/health`
+
+### Docker Registry Structure
+In compliance with production requirements, the pre-built Docker containers are hosted under a **single image repository** using explicit tags for each service. This cleanly divides the architecture without requiring multiple disparate repositories on Docker Hub.
+* **Backend Image:** `rushi5706/form-builder:backend`
+* **Frontend Image:** `rushi5706/form-builder:frontend`
+
+*(If you are pulling directly from Docker Hub instead of building locally, you can use these precise tags in your config via `image: rushi5706/form-builder:frontend`)*
+
+---
+
+## Comprehensive API Testing Guide
+
+Use the following commands to manually test the intelligence and retry logic of the backend API.
+
+### 1. Health Check
+Verify the backend is actively listening:
+```bash
+curl -s http://localhost:8080/health
+```
+
+### 2. Generate a Complete Form
+Create a new form from an initial prompt:
+```bash
+curl -s -X POST http://localhost:8080/api/form/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Create a simple feedback form with email and rating"
+  }'
+```
+
+### 3. Refine an Existing Form (Multi-Turn)
+To iterate on a form, copy the `conversationId` from step 2 and include it in your next request:
+```bash
+curl -s -X POST http://localhost:8080/api/form/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Make the email required and add a phone number field",
+    "conversationId": "PASTE_YOUR_ID_HERE"
+  }'
+```
+
+### 4. Trigger Ambiguity Detection (Clarification)
+The AI is trained to stop and ask questions if the prompt is too vague:
+```bash
+curl -s -X POST http://localhost:8080/api/form/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Make a form for booking a meeting room"
+  }'
+```
+
+### 5. Test LLM Failure Recovery (Mock Errors)
+Force the LLM to return bad data to watch the backend automatically retry and self-heal:
+```bash
+# Simulates 1 failure, which the backend will catch and fix automatically
+curl -s -X POST "http://localhost:8080/api/form/generate?mock_llm_failure=1" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Feedback form"}'
+```
+
+### 6. Test Fatal LLM Failure (500 Error)
+Force the LLM to fail 3 times. The backend will give up and safely return a 500 error to the client:
+```bash
+curl -s -X POST "http://localhost:8080/api/form/generate?mock_llm_failure=3" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Feedback form"}'
+```
+
+---
 
 ## Project Structure
 
-\`\`\`text
-AI-Powered-Conversational-Form-Builder-with-JSON-Schema/
-├── docker-compose.yml       # Orchestrates frontend and backend containers
-├── README.md                # Comprehensive project documentation
-├── .gitignore               # Root level ignore file
-├── backend/
-│   ├── Dockerfile           # Backend container definition
-│   ├── .dockerignore        # Excludes node_modules and logs from build
-│   ├── .env.example         # Template for environment variables
-│   ├── package.json         # Backend dependencies
+```text
+AI-Powered-Conversational-Form-Builder/
+├── backend/                  # API Server
 │   ├── src/
-│   │   ├── index.js         # Entry point, starts Express server
-│   │   ├── config.js        # Loads and validates environment variables
-│   │   ├── routes/          # API route definitions (health, form)
-│   │   ├── controllers/     # Request handling logic
-│   │   ├── services/        # Groq API, conversation store, validators
-│   │   └── utils/           # System prompt and LLM message builders
-└── frontend/
-    ├── Dockerfile           # Multi-stage Nginx build for frontend
-    ├── .dockerignore        # Excludes local artifacts from build
-    ├── package.json         # Frontend UI dependencies
-    ├── vite.config.js       # Vite configuration with API proxying
-    ├── index.html           # React root HTML
-    └── src/
-        ├── main.jsx         # React DOM entry point
-        ├── App.jsx          # Main application layout component
-        ├── context/         # React Context and useReducer store
-        ├── components/      # ChatPane, FormRenderer, DiffPanel, ExportPanel
-        └── styles/          # Vanilla CSS Grid styling
-\`\`\`
+│   │   ├── controllers/      # Form generation business logic
+│   │   ├── routes/           # API Endpoints
+│   │   ├── services/         # Groq integration & AJV validators
+│   │   ├── utils/            # System prompts
+│   │   ├── config.js         # Env validation
+│   │   └── index.js          # Server entry
+│   ├── Dockerfile            # Node 20 backend image
+│   └── package.json
+├── frontend/                 # User Interface
+│   ├── src/
+│   │   ├── components/       # ChatPane, diff visualizers, exports
+│   │   ├── context/          # React Global State
+│   │   ├── styles/           # UI styling
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── Dockerfile            # Nginx multi-stage build image
+│   ├── nginx.conf            # Custom routing configuration
+│   └── package.json
+├── docker-compose.yml        # Orchestration layer
+└── README.md
+```
 
-## Prerequisites
+---
 
-- Node.js 20+
-- Docker and Docker Compose
-- Groq API Key
+## Technology Stack
 
-## Quickstart (One-Command Startup)
+| Component | Technology | Rationale |
+|-----------|------------|-----------|
+| **Frontend** | React 18 + Vite | Rapid UI development with robust component state mapping. |
+| **Backend** | Node.js + Express | Lightweight, async-first engine perfect for JSON relaying. |
+| **AI LLM** | Groq SDK | Lightning-fast `llama-3.3-70b` for minimal latency generation. |
+| **Validation**| AJV + ajv-formats | Industry standard for absolute JSON Draft 7 adherence. |
+| **Forms** | `@rjsf/core` | Auto-wraps semantic schemas directly into functional React UI. |
+| **Diffs** | `deep-diff` | Pinpoints precise structural additions/deletions per turn. |
 
-1. Clone the repository:
-   \`\`\`bash
-   git clone https://github.com/Rushikesh-5706/AI-Powered-Conversational-Form-Builder-with-JSON-Schema.git
-   cd AI-Powered-Conversational-Form-Builder-with-JSON-Schema
-   \`\`\`
-2. Set up your environment variables:
-   Copy the example file and add your Groq API key:
-   \`\`\`bash
-   cp backend/.env.example backend/.env
-   # Edit backend/.env and replace the LLM_API_KEY with your real key.
-   ```
-   Note: `LLM_API_KEY` is required. The application will not start without it.
-3. Build and run the containers:
-   ```bash
-   docker-compose up --build
-   ```
-4. Access the frontend application at http://localhost:3000
-5. Verify the backend health check at http://localhost:8080/health
+---
 
-### Docker Registry Structure
-In compliance with production submission requirements, the pre-built Docker containers are hosted under a **single image repository** using explicit tags for each service. This cleanly divides the architecture without requiring multiple disparate repositories on Docker Hub.
-- **Backend Image:** `rushi5706/form-builder:backend`
-- **Frontend Image:** `rushi5706/form-builder:frontend`
+## Design & Engineering Decisions
 
-If you are pulling directly from Docker Hub instead of building locally, you can use these precise tags.
-
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| API_PORT | No | 8080 | Port the backend API server listens on |
-| LLM_API_KEY | Yes | None | API key for the Groq LLM service |
-
-## API Reference
-
-### Health Check
-**GET `/health`**
-Returns the operational status of the service.
-- **Response `200 OK`**:
-  \`\`\`json
-  { "status": "healthy" }
-  \`\`\`
-
-### Generate Form
-**POST `/api/form/generate`**
-Generates or updates a form schema based on the user prompt.
-- **Request Body**:
-  \`\`\`json
-  {
-    "prompt": "Create a contact form with a name and an email address",
-    "conversationId": "optional-uuid"
-  }
-  \`\`\`
-- **Query Parameters**:
-  - `mock_llm_failure` (optional integer 0-3): Forces the LLM to return an invalid object to test the backend's retry logic.
-- **Response `200 OK` (Schema Generated)**:
-  \`\`\`json
-  {
-    "formId": "uuid",
-    "conversationId": "uuid",
-    "version": 1,
-    "schema": { ... JSON Schema Draft 7 ... }
-  }
-  \`\`\`
-- **Response `200 OK` (Clarification Needed)**:
-  \`\`\`json
-  {
-    "status": "clarification_needed",
-    "conversationId": "uuid",
-    "questions": [
-      "What kind of information do you need?",
-      "Do you need to collect email addresses?"
-    ]
-  }
-  \`\`\`
-- **Response `500 Internal Server Error`**:
-  \`\`\`json
-  { "error": "Failed to generate valid schema after multiple attempts." }
-  \`\`\`
-
-## Features
-
-**Conversational form building**
-Describe the form you want to build using natural language. The LLM translates your request directly into a functional, validated JSON Schema capable of rendering dynamic UI elements.
-
-**Multi-turn conversation refinement**
-Because the system stores conversational history, you can request incremental changes to your form without starting over. "Add a phone number field" will simply append the field to your existing schema.
-
-**Ambiguity detection and clarification**
-When a prompt is too brief (e.g., "book a room"), the system will gracefully halt form generation to ask relevant follow-up questions, ensuring the final output matches exactly what you need.
-
-**Schema validation with retry**
-Occasionally, LLMs generate malformed JSON. The backend catches Draft 7 schema violations before they reach the frontend, automatically feeding the error back to the LLM to self-correct up to three times.
-
-**Conditional field visibility (`x-show-when`)**
-The application natively supports conditional logic. Fields can appear or disappear dynamically based on the state of other fields via an extension to the JSON Schema (`x-show-when`), enabling complex interactive surveys.
-
-**Real-time schema diff**
-A specialized panel displays line-by-line path differences between the previous form version and the current one, making it easy to see exactly what the LLM added, modified, or removed.
-
-**Export functionality**
-Once the form is perfected, users can easily export the raw JSON schema, copy a React implementation snippet using `@rjsf/core`, or copy the underlying cURL command used to generate the form.
-
-## Design Decisions
-
-**Why in-memory state instead of a database**
-For simplicity and demonstration purposes, an in-memory `Map` holds the conversation schema and history. While it inherently lacks persistence across server restarts, it avoids the setup complexity of Redis or Postgres while providing atomic read/writes during normal operation.
-
-**Why Groq with llama-3.3-70b-versatile**
-The Groq LPU engine delivers nearly instantaneous inference speeds, allowing the multi-turn conversational interface to feel highly responsive. The Llama 3.3 70b model excels at code generation and instruction adherence, ensuring accurate JSON schemas.
-
-**Why `@rjsf/core` for form rendering**
-Building complex, conditional form inputs natively in React requires significant boilerplate. React JSON Schema Form translates standardized JSON structures into fully interactive DOM elements while strictly enforcing AJV validation schemas.
-
-**How the retry mechanism protects against LLM hallucinations**
-Language models occasionally fail to return properly structured data. Rather than bubbling these errors to the user, the `schemaValidator` checks the output against the Draft 7 meta-schema. If it fails, the error message is appended to a temporary conversation history and sent back to the LLM, prompting it to correct its own mistake. This is handled invisibly behind the scenes.
-
-**Why JSON Schema Draft 7 was chosen**
-Draft 7 balances modern schema constraints with excellent library support. It provides granular controls (minLength, formatting regex) required for meaningful form validation, and integrating an `x-show-when` extension inside its bounds is straightforward.
-
-## Testing the Application
-
-1. **Health check**:
-   \`\`\`bash
-   curl http://localhost:8080/health
-   \`\`\`
-2. **Creating a form**:
-   \`\`\`bash
-   curl -X POST http://localhost:8080/api/form/generate \
-        -H "Content-Type: application/json" \
-        -d '{"prompt": "Create a simple feedback form"}'
-   \`\`\`
-3. **Continuing a conversation**:
-   \`\`\`bash
-   curl -X POST http://localhost:8080/api/form/generate \
-        -H "Content-Type: application/json" \
-        -d '{"prompt": "Make the email required", "conversationId": "<ID_FROM_PREVIOUS_STEP>"}'
-   \`\`\`
-4. **Triggering clarification**:
-   \`\`\`bash
-   curl -X POST http://localhost:8080/api/form/generate \
-        -H "Content-Type: application/json" \
-        -d '{"prompt": "Make a form for booking a meeting room"}'
-   \`\`\`
-5. **Testing retry with `mock_llm_failure=1`**:
-   \`\`\`bash
-   curl -X POST "http://localhost:8080/api/form/generate?mock_llm_failure=1" \
-        -H "Content-Type: application/json" \
-        -d '{"prompt": "Feedback form"}'
-   \`\`\`
-6. **Testing failure with `mock_llm_failure=3`**:
-   \`\`\`bash
-   curl -X POST "http://localhost:8080/api/form/generate?mock_llm_failure=3" \
-        -H "Content-Type: application/json" \
-        -d '{"prompt": "Feedback form"}'
-   \`\`\`
+1. **Self-Healing AI Loop:** Rather than bubbling LLM hallucinations directly to the user, the `schemaValidator` acts as a guardrail. If the AI returns invalid Draft 7 schema, the backend physically captures the error string and feeds it back into the LLM asynchronously, asking it to repair its own output up to three times.
+2. **Conditional Logic Extension:** JSON Schema doesn't natively handle complex field visibility perfectly. The app injects an `x-show-when` extension inside the bounds of the schema gracefully. The frontend's `ConditionalField` interceptor parses this quietly to toggle UI elements dynamically.
+3. **In-Memory Store:** The conversational context is kept in a lightweight memory map with UUID tracking to minimize setup dependencies, while perfectly simulating the structure of an actual persistent DB connection.
 
 ## Known Limitations
-- The system uses an in-memory `Map` for conversations; all form states and chat histories will be lost if the backend restarts.
-- There is no authenticated user tracking; anyone with a valid `conversationId` can modify the associated form.
-- The UI does not provide deeply nested group styles; forms rely heavily on the default styling provided by `@rjsf/core`.
 
-
-
-
-
-
+- The system uses an in-memory `Map` for conversations; all form states and chat histories reset on server restart.
