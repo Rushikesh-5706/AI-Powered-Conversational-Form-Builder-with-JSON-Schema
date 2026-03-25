@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Form from '@rjsf/core';
 import validator from '@rjsf/validator-ajv8';
 import { useAppContext } from '../../context/AppContext';
@@ -34,6 +34,10 @@ function CustomFieldTemplate(props) {
 function FormRenderer() {
   const { state } = useAppContext();
   const [formData, setFormData] = useState({});
+
+  useEffect(() => {
+    setFormData({});
+  }, [state.currentSchema]);
 
   if (!state.currentSchema) {
     return (
