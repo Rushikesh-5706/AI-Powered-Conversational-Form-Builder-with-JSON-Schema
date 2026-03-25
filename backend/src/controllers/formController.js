@@ -26,7 +26,6 @@ async function generate(req, res, next) {
       currentConversationId = conversation.id;
     }
 
-    // STEP 3 MAP USER MESSAGE TO HISTORY
     conversation.history.push({ role: 'user', content: prompt });
     conversationStore.updateConversation(currentConversationId, { history: conversation.history });
 
@@ -35,7 +34,7 @@ async function generate(req, res, next) {
     let lastValidationError = null;
 
     while (attemptNumber <= maxAttempts) {
-      // Create a shallow copy of history for this attempt's contextual call
+      // Build the message history for this specific attempt without mutating the stored history
       let currentHistory = [...conversation.history];
 
       if (attemptNumber > 1 && lastValidationError) {
