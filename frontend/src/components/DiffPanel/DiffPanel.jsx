@@ -26,7 +26,6 @@ function DiffPanel() {
       if (d.kind === 'N') {
         text = `+ ${pathStr}`;
         className = 'diff-add';
-        // Need to ensure + fieldForDiffTest formats are shown
       } else if (d.kind === 'D') {
         text = `- ${pathStr}`;
         className = 'diff-del';
