@@ -21,7 +21,7 @@ async function callGroq(conversationHistory, systemPrompt) {
 
     let rawContent = completion.choices[0].message.content;
     
-    // Defensively strip markdown if present despite json_object response format
+    // Groq occasionally wraps output in markdown fences even with json_object mode
     if (rawContent.startsWith('```json')) {
       rawContent = rawContent.replace(/^```json/, '').replace(/```$/, '').trim();
     } else if (rawContent.startsWith('```')) {

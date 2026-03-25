@@ -52,9 +52,9 @@ export default function MyForm() {
   };
 
   const handleCopyCurl = async () => {
-    // Provide a generic cURL if no user prompt history is available yet, else the last prompt.
-    const lastUserMsg = state.messages.filter(m => m.role === 'user').pop();
-    const promptText = lastUserMsg ? lastUserMsg.content : "A simple contact form";
+    // Use the most recent user prompt for the curl command, or a default if none exists yet
+    const lastUserMessage = state.messages.slice().reverse().find(m => m.role === 'user');
+    const promptText = lastUserMessage ? lastUserMessage.content : "A simple contact form";
     
     const curlSnippet = `curl -X POST http://localhost:8080/api/form/generate \\
 -H "Content-Type: application/json" \\
