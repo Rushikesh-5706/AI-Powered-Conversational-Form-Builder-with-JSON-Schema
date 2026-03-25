@@ -8,13 +8,12 @@ function MessageInput() {
   const [prompt, setPrompt] = useState('');
   const { state, dispatch } = useAppContext();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!prompt.trim() || state.isLoading) return;
 
     const currentPrompt = prompt;
     setPrompt('');
-    
+
     dispatch({ type: 'CLEAR_ERROR' });
     dispatch({ type: 'ADD_MESSAGE', payload: { role: 'user', content: currentPrompt, type: 'text' } });
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -25,7 +24,6 @@ function MessageInput() {
         payload.conversationId = state.conversationId;
       }
 
-      // Check for mock_llm_failure in query params or set empty
       const urlParams = new URLSearchParams(window.location.search);
       const mockFail = urlParams.get('mock_llm_failure');
       const queryStr = mockFail ? `?mock_llm_failure=${mockFail}` : '';
@@ -48,11 +46,7 @@ function MessageInput() {
       } else if (response.data.schema) {
         dispatch({
           type: 'ADD_MESSAGE',
-          payload: {
-            role: 'assistant',
-            content: 'Schema generated',
-            type: 'schema'
-          }
+          payload: { role: 'assistant', content: 'Schema generated', type: 'schema' }
         });
         dispatch({
           type: 'SET_SCHEMA',
@@ -76,12 +70,12 @@ function MessageInput() {
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      handleSubmit();
     }
   };
 
   return (
-    <form className="message-input-container" onSubmit={handleSubmit}>
+    <div className="message-input-container">
       <textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
@@ -89,10 +83,13 @@ function MessageInput() {
         placeholder="Describe the form you want to build..."
         disabled={state.isLoading}
       />
-      <button type="submit" disabled={!prompt.trim() || state.isLoading}>
+      <button
+        onClick={handleSubmit}
+        disabled={!prompt.trim() || state.isLoading}
+      >
         Send
       </button>
-    </form>
+    </div>
   );
 }
 
