@@ -1,0 +1,129 @@
+:root {
+  --primary-color: #3b82f6;
+  --bg-dark: #111827;
+  --bg-light: #f3f4f6;
+  --text-dark: #1f2937;
+  --text-light: #f9fafb;
+  --border-color: #e5e7eb;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text-dark);
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 40% 60%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.chat-pane {
+  background-color: var(--bg-light);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.right-pane {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background-color: #ffffff;
+}
+
+.message-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.message {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  max-width: 85%;
+}
+
+.message.user {
+  background-color: var(--primary-color);
+  color: white;
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.message.assistant {
+  background-color: #e5e7eb;
+  color: var(--text-dark);
+  align-self: flex-start;
+}
+
+.message-input-container {
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  background-color: white;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.message-input-container textarea {
+  flex-grow: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  resize: vertical;
+  min-height: 40px;
+}
+
+.message-input-container button {
+  padding: 0.5rem 1rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.message-input-container button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.form-renderer-pane {
+  flex-grow: 1;
+  padding: 2rem;
+}
+
+.schema-diff-panel {
+  padding: 1rem 2rem;
+  background-color: #f8fafc;
+  border-top: 1px solid var(--border-color);
+  font-family: monospace;
+}
+
+.diff-add { color: #16a34a; }
+.diff-del { color: #dc2626; }
+.diff-edit { color: #d97706; }
+
+.export-panel {
+  padding: 1rem 2rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 1rem;
+  background-color: #f8fafc;
+}
+
+.export-panel button {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  background-color: white;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.export-panel button:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
