@@ -1,45 +1,28 @@
 import React from 'react';
 
 function ConditionalField(props) {
-  const { schema, uiSchema, formData, name, registry, idSchema, onChange, required, readonly, disabled, autofocus, onBlur, onFocus, errorSchema } = props;
+  const { schema, uiSchema, name, registry } = props;
   const { formContext } = registry;
-  
-  // RJSF puts the whole form data in registry.rootSchema normally? 
-  // No, the parent's formData is passed as root formData only rarely, 
-  // but we can access it if we track it at the root.
-  // Actually, props.formData here is the *field's* data, not the full form data.
-  // We need to parse registry or form context if provided, OR we access the root formData from form.
-  
-  // Wait! A custom field gets the entire form data in \`formContext\` only if we pass it 
-  // explicitly to the <Form formContext={{ formData }} /> prop!
-  // BUT we can use registry.rootSchema? No.
-  // Actually, in @rjsf/core, there might be a better way... 
-  // Let me just rewrite FormRenderer slightly after this.
-  // We'll pass formData to formContext in FormRenderer.
-  
+
+  // x-show-when is a custom extension that conditionally hides this field
+  // based on the current value of another field in the form.
+  // The root form data is passed via formContext from the parent Form component.
   const rootFormData = formContext && formContext.formData ? formContext.formData : {};
   const condition = schema['x-show-when'];
-  
+
   let isVisible = true;
   if (condition && condition.field) {
-    const targetValue = rootFormData[condition.field];
-    isVisible = (targetValue === condition.equals);
+    isVisible = rootFormData[condition.field] === condition.equals;
   }
 
-  const displayStyle = isVisible ? 'block' : 'none';
-
-  // We need to render the underlying field.
-  const SchemaField = registry.fields.SchemaField;
-
-  // We have to strip our custom ui:field so it doesn't infinite loop.
+  // Strip our custom ui:field to avoid infinite recursion when SchemaField renders
   const uiSchemaWithoutField = { ...uiSchema };
   delete uiSchemaWithoutField['ui:field'];
 
-  // The wrapper div MUST have data-testid="field-{name}"
-  const testId = `field-${name}`;
+  const SchemaField = registry.fields.SchemaField;
 
   return (
-    <div style={{ display: displayStyle }} data-testid={testId}>
+    <div style={{ display: isVisible ? 'block' : 'none' }} data-testid={`field-${name}`}>
       <SchemaField
         {...props}
         uiSchema={uiSchemaWithoutField}
