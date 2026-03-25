@@ -1,17 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Form from '@rjsf/core';
 import validator from '@rjsf/validator-ajv8';
 import { useAppContext } from '../../context/AppContext';
 import ConditionalField from './ConditionalField';
 
 function CustomFieldTemplate(props) {
-  const { id, classNames, label, help, required, description, errors, children, schema, name } = props;
-  const testId = `field-${name || id}`;
+  const { id, classNames, label, help, required, description, errors, children, name, uiSchema } = props;
+
+  // Only add data-testid for fields that are NOT handled by ConditionalField.
+  // ConditionalField adds its own data-testid wrapper to avoid duplicate attributes.
+  const isConditional = uiSchema && uiSchema['ui:field'] === 'ConditionalField';
+  const testIdProps = isConditional ? {} : { 'data-testid': `field-${name || id}` };
 
   return (
-    <div className={classNames} data-testid={testId} style={{ marginBottom: '1rem' }}>
-      {label && <label htmlFor={id} style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.25rem' }}>{label}{required ? "*" : null}</label>}
-      {description && <div style={{ fontSize: '0.9em', color: '#6b7280', marginBottom: '0.5rem' }}>{description}</div>}
+    <div className={classNames} {...testIdProps} style={{ marginBottom: '1rem' }}>
+      {label && (
+        <label htmlFor={id} style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+          {label}{required ? '*' : null}
+        </label>
+      )}
+      {description && (
+        <div style={{ fontSize: '0.9em', color: '#6b7280', marginBottom: '0.5rem' }}>
+          {description}
+        </div>
+      )}
       {children}
       {errors}
       {help}
@@ -22,10 +34,6 @@ function CustomFieldTemplate(props) {
 function FormRenderer() {
   const { state } = useAppContext();
   const [formData, setFormData] = useState({});
-
-  useEffect(() => {
-    // Optional: reset form data when form completely changes. We'll leave it as is.
-  }, [state.currentSchema]);
 
   if (!state.currentSchema) {
     return (
@@ -41,9 +49,7 @@ function FormRenderer() {
       Object.keys(schema.properties).forEach(key => {
         const prop = schema.properties[key];
         if (prop['x-show-when']) {
-          uiSchema[key] = {
-            'ui:field': 'ConditionalField'
-          };
+          uiSchema[key] = { 'ui:field': 'ConditionalField' };
         }
       });
     }
