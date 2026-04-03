@@ -94,7 +94,6 @@ async function generate(req, res, next) {
     }
 
     // All retry attempts failed — return error to client
-    console.error('Max retries exhausted for form generation');
     return res.status(500).json({ error: 'Failed to generate valid schema after multiple attempts.' });
 
   } catch (error) {
