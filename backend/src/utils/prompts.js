@@ -85,7 +85,6 @@ Response:
 `;
 
 function buildUserMessages(conversationHistory) {
-  // Format the history array into the messages array format required by the Groq API
   return conversationHistory.map(msg => ({
     role: msg.role,
     content: msg.content

@@ -255,5 +255,4 @@ conditional extension slots cleanly into the additional properties space Draft 7
 
 - Conversation history resets when the backend container restarts. There is no persistence layer.
 - No authentication. Any client with a valid conversationId can modify that conversation.
-- The form data state does not automatically reset when the schema changes to a completely different structure.
 - The application assumes the Groq API is reachable. There is no offline fallback.

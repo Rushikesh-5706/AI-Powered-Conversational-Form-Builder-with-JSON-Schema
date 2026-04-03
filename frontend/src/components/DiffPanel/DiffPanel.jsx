@@ -18,7 +18,6 @@ function DiffPanel() {
     }
 
     return diffs.map((d, index) => {
-      // The path array joined with dot
       const pathStr = d.path ? d.path.join('.') : '';
       let text = '';
       let className = '';
